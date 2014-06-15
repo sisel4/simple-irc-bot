@@ -1,17 +1,20 @@
 #!/usr/bin/python
 import socket
+import sys
 
-DEBUG=1
-#HOST="chat.freenode.net"
-HOST="irc.pirc.pl"
+DEBUG=0
+HOST="irc.snt.utwente.nl"
+#HOST="irc.pirc.pl"
 #HOST="polska.irc.pl"
 PORT=6667
-NICK='TestowyBot'
-IDENT="bot"
-REALNAME="Bot lysyson"
+NICK='Lucznik'
+IDENT="Lucznik"
+REALNAME="Lucznik lysyson"
 #CHANNEL="#testowy"
-CHANNEL="#testowy"
-OWNERS=('sisel4', 'pwg')
+CHANNEL="#aug.net.pl"
+OWNERS=('sisel4', 'pwg', 'rj46')
+SECONDARY_NICK='Alicja'
+SECONDARY_HOST='Aliszja@lysego.pl'
 class irc_connection:
 	def __init__(self, host, port, nick, ident, name, channel, debug, owners):
 		self.address_set=0
@@ -41,6 +44,7 @@ class irc_connection:
 	def join(self):
 		self.send("JOIN %s\r\n" % self.channel)
 		self.get_topic()
+		print('Joined channel: %s' % self.channel)
 	def message(self, data, sender):
 		logfile=open('log','a')
 		sender_nick=sender.split('!')[0]
@@ -102,37 +106,47 @@ class irc_connection:
 buffer=''
 irc=irc_connection(HOST, PORT, NICK, IDENT, REALNAME, CHANNEL, DEBUG, OWNERS)
 while 1:
-	buffer=irc.recive()
-	for line in buffer:
-		if len(line)>0:
-			line=line.rstrip()
-			if(irc.debug==1):			
-				print("<<", end=' ')
-				for element in line:
-					print(element, end="")
-				print("")
-	
-			if(irc.address_set==0):
-				irc.set_realserver_address(line.split(':')[1].split()[0])
-				irc.address_set=1
-				print('Connected to server: %s' % irc.host)
-			if(line[:4]=='PING'):
-				line=line.split()
-				print('Got ping: %s' % line[1])
-				irc.send("PONG %s" % line[1])
-			if('376' in line):
-				irc.join()
-				irc.set_mode(NICK, '+B %s' % NICK)
-			if('PRIVMSG %s' % CHANNEL in line):
-				line=line.split(' PRIVMSG %s :' % irc.channel)
-				sender=line[0]
-				sender=sender[1:]
-				irc.message(line[1] , sender)
-			if('JOIN :%s' % irc.channel in line):
-				line=line.split('JOIN %s' % irc.channel)
-				user=line[0]
-				user=user[1:].split('!')
-				user=user[0]
-				print('%s has joined %s' % (user, irc.channel))
-				irc.send_message_to_channel('Hej %s \o' % user)
-
+	try:
+		buffer=irc.recive()
+		for line in buffer:
+			if len(line)>0:
+				line=line.rstrip()
+				if(irc.debug==1):			
+					print("<<", end=' ')
+					for element in line:
+						print(element, end="")
+					print("")
+		
+				if(irc.address_set==0):
+					irc.set_realserver_address(line.split(':')[1].split()[0])
+					irc.address_set=1
+					print('Connected to server: %s' % irc.host)
+				if(line[:4]=='PING'):
+					line=line.split()
+					print('Got ping: %s' % line[1])
+					irc.send("PONG %s" % line[1])
+				if(':%s 376 %s' % (irc.host,irc.nick) in line):
+					irc.join()
+					irc.set_mode(NICK, '+B %s' % NICK)
+				if('PRIVMSG %s' % CHANNEL in line):
+					line=line.split(' PRIVMSG %s :' % irc.channel)
+					sender=line[0]
+					sender=sender[1:]
+					irc.message(line[1] , sender)
+				if('JOIN :%s' % irc.channel in line):
+					line=line.split('JOIN %s' % irc.channel)
+					user=line[0]
+					user=user[1:].split('!')
+					host=user[1].split()[0]
+					user=user[0]
+					if user!=irc.nick:
+						print('%s has joined %s' % (user, irc.channel))
+						irc.send_message_to_channel('Hej %s \o' % user)
+					if(user==SECONDARY_NICK):
+						if(host==SECONDARY_HOST):
+							irc.op(user)
+					else:
+						irc.send_message_to_channel('Aloha o/')
+	except KeyboardInterrupt:
+		irc.send('QUIT :Keyboard Interrupt')
+		sys.exit(0)
