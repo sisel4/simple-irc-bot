@@ -1,10 +1,27 @@
 #!/usr/bin/python
 import socket
 import sys
+import threading
 
 ##load config
 import config
 
+##command line
+
+def commandline():
+	while 1:
+		command=input('>> ')
+		if len(command)>0:
+			if command.split()[0]=='tell':
+				irc.send_message_to_channel(command[5:])
+			if command=='exit':
+				irc.send('QUIT :got exit command')
+				sys.exit(0)
+			if command=='help':
+				print('Available commands:')
+				print('tell <bleh> == send message to channel')
+				print('exit        == stop the bot')
+				print('help        == print\'s this message')
 
 ##bot main code
 class irc_connection:
@@ -97,6 +114,8 @@ class irc_connection:
 		self.send('TOPIC %s :%s' % (self.channel, self.topic+' | '+topic))
 buffer=''
 irc=irc_connection(config.HOST, config.PORT, config.NICK, config.IDENT, config.REALNAME, config.CHANNEL, config.DEBUG, config.OWNERS)
+thread_comline = threading.Thread(target=commandline, args=[])
+thread_comline.start()
 while 1:
 	try:
 		buffer=irc.recive()
