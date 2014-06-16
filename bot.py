@@ -2,19 +2,11 @@
 import socket
 import sys
 
-DEBUG=0
-HOST="irc.snt.utwente.nl"
-#HOST="irc.pirc.pl"
-#HOST="polska.irc.pl"
-PORT=6667
-NICK='Lucznik'
-IDENT="Lucznik"
-REALNAME="Lucznik lysyson"
-#CHANNEL="#testowy"
-CHANNEL="#aug.net.pl"
-OWNERS=('sisel4', 'pwg', 'rj46')
-SECONDARY_NICK='Alicja'
-SECONDARY_HOST='Aliszja@lysego.pl'
+##load config
+import config
+
+
+##bot main code
 class irc_connection:
 	def __init__(self, host, port, nick, ident, name, channel, debug, owners):
 		self.address_set=0
@@ -38,7 +30,7 @@ class irc_connection:
 		data=data.encode('utf-8')
 		self.connection.send(data)
 	def recive(self):
-		buffer=self.connection.recv(2048).decode()
+		buffer=self.connection.recv(2048).decode('utf-8','ignore')
 		buffer=buffer.split('\r\n')
 		return buffer
 	def join(self):
@@ -104,7 +96,7 @@ class irc_connection:
 	def append_topic(self, topic):
 		self.send('TOPIC %s :%s' % (self.channel, self.topic+' | '+topic))
 buffer=''
-irc=irc_connection(HOST, PORT, NICK, IDENT, REALNAME, CHANNEL, DEBUG, OWNERS)
+irc=irc_connection(config.HOST, config.PORT, config.NICK, config.IDENT, config.REALNAME, config.CHANNEL, config.DEBUG, config.OWNERS)
 while 1:
 	try:
 		buffer=irc.recive()
@@ -127,8 +119,8 @@ while 1:
 					irc.send("PONG %s" % line[1])
 				if(':%s 376 %s' % (irc.host,irc.nick) in line):
 					irc.join()
-					irc.set_mode(NICK, '+B %s' % NICK)
-				if('PRIVMSG %s' % CHANNEL in line):
+					irc.set_mode(irc.nick, '+B %s' % irc.nick)
+				if('PRIVMSG %s' % irc.channel in line):
 					line=line.split(' PRIVMSG %s :' % irc.channel)
 					sender=line[0]
 					sender=sender[1:]
@@ -142,11 +134,9 @@ while 1:
 					if user!=irc.nick:
 						print('%s has joined %s' % (user, irc.channel))
 						irc.send_message_to_channel('Hej %s \o' % user)
-					if(user==SECONDARY_NICK):
-						if(host==SECONDARY_HOST):
+					if(user==config.SECONDARY_NICK):
+						if(host==config.SECONDARY_HOST):
 							irc.op(user)
-					else:
-						irc.send_message_to_channel('Aloha o/')
 	except KeyboardInterrupt:
 		irc.send('QUIT :Keyboard Interrupt')
 		sys.exit(0)
