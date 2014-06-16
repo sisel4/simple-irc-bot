@@ -44,7 +44,7 @@ class irc_connection:
 		if self.debug==1:
 			print(">>",data)
 		data=data+'\r\n'
-		data=data.encode('utf-8')
+		data=data.encode('utf-8','ignore')
 		self.connection.send(data)
 	def recive(self):
 		buffer=self.connection.recv(2048).decode('utf-8','ignore')
@@ -134,7 +134,7 @@ while 1:
 					print('Connected to server: %s' % irc.host)
 				if(line[:4]=='PING'):
 					line=line.split()
-					print('Got ping: %s' % line[1])
+					print('PING? PONG!')
 					irc.send("PONG %s" % line[1])
 				if(':%s 376 %s' % (irc.host,irc.nick) in line):
 					irc.join()
