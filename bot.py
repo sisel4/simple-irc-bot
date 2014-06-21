@@ -2,27 +2,29 @@
 import socket
 import sys
 import threading
-
+import re
 ##load config
 import config
 
 ##command line
 
 def commandline():
-	while 1:
-		command=input('>> ')
-		if len(command)>0:
-			if command.split()[0]=='tell':
-				irc.send_message_to_channel(command[5:])
-			if command=='exit':
-				irc.send('QUIT :got exit command')
-				sys.exit(0)
-			if command=='help':
-				print('Available commands:')
-				print('tell <bleh> == send message to channel')
-				print('exit        == stop the bot')
-				print('help        == print\'s this message')
-
+	try:	
+		while 1:
+			command=input('>> ')
+			if len(command)>0:
+				if command.split()[0]=='tell':
+					irc.send_message_to_channel(command[5:])
+				if command=='exit':
+					irc.send('QUIT :got exit command')
+					sys.exit(0)
+				if command=='help':
+					print('Available commands:')
+					print('tell <bleh> == send message to channel')
+					print('exit        == stop the bot')
+					print('help        == print\'s this message')
+	except KeyboardInterrupt:
+		sys.exit(0)
 ##bot main code
 class irc_connection:
 	def __init__(self, host, port, nick, ident, name, channel, debug, owners):
@@ -40,6 +42,7 @@ class irc_connection:
 		self.send("NICK %s" % self.nick)
 		self.send("USER %s %s bla :%s" % (self.ident, self.host, self.name))
 		self.topic=''
+		self.regex=re.compile("\sxd$",re.M)
 	def send(self, data):
 		if self.debug==1:
 			print(">>",data)
@@ -63,7 +66,8 @@ class irc_connection:
 			logfile.write("<%s> %s\n"%(sender_nick, data))
 		else:
 			logfile.write("<%s> %s\n"%(sender_nick, data))
-		if (data.lower().find('xd')!=-1):
+		iksde=re.search(self.regex, data.lower())
+		if (iksde) or (data.lower()=='xd'):
 			self.kick(sender_nick, 'iksde')
 		if (data[0]=='!'):
 			if (data=='!hello'):
@@ -74,7 +78,6 @@ class irc_connection:
 			if (data=='!deop'):
 				if(sender_nick in self.owners):
 					self.deop(sender_nick)	
-
 			if (data.find('!temat')==0):
 				if(sender_nick in self.owners):
 					data=data.replace('!temat ','')
@@ -84,6 +87,15 @@ class irc_connection:
 					data=data.replace('!dopisz ','')
 					self.get_topic()
 					self.append_topic(data)
+			if (data=='!opall'):
+				if(sender_nick in self.owners):
+					for op in self.owners:
+						self.op(op)
+			if (data=='!deopall'):
+				if(sender_nick in self.owners):
+					for op in self.owners:
+						self.deop(op)
+					
 		logfile.close()
 	def send_message_to_channel(self, data):
 		self.send('PRIVMSG %s :%s' % (self.channel, data))
@@ -153,9 +165,8 @@ while 1:
 					if user!=irc.nick:
 						print('%s has joined %s' % (user, irc.channel))
 						irc.send_message_to_channel('Hej %s \o' % user)
-					if(user==config.SECONDARY_NICK):
-						if(host==config.SECONDARY_HOST):
-							irc.op(user)
+					if('%s!%s' %(user, host) in config.SECONDARY):
+						irc.op(user)
 	except KeyboardInterrupt:
 		irc.send('QUIT :Keyboard Interrupt')
 		sys.exit(0)
