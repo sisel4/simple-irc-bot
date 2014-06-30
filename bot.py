@@ -58,45 +58,45 @@ class irc_connection:
 		self.get_topic()
 		print('Joined channel: %s' % self.channel)
 	def message(self, data, sender):
-		logfile=open('log','a')
-		sender_nick=sender.split('!')[0]
-		if self.debug==1:
-			print('Got message: %s' % data)
-			print('From: %s' % sender)
-			logfile.write("<%s> %s\n"%(sender_nick, data))
-		else:
-			logfile.write("<%s> %s\n"%(sender_nick, data))
-		iksde=re.search(self.regex, data.lower())
-		if (iksde) or (data.lower()=='xd'):
-			self.kick(sender_nick, 'iksde')
-		if (data[0]=='!'):
-			if (data=='!hello'):
-				self.send_message_to_channel('hej %s' % sender_nick)
-			if (data=='!op'):
-				if(sender_nick in self.owners):
-					self.op(sender_nick)
-			if (data=='!deop'):
-				if(sender_nick in self.owners):
-					self.deop(sender_nick)	
-			if (data.find('!temat')==0):
-				if(sender_nick in self.owners):
-					data=data.replace('!temat ','')
-					self.set_topic(data)
-			if (data.find('!dopisz')==0):
-				if(sender_nick in self.owners):
-					data=data.replace('!dopisz ','')
-					self.get_topic()
-					self.append_topic(data)
-			if (data=='!opall'):
-				if(sender_nick in self.owners):
-					for op in self.owners:
-						self.op(op)
-			if (data=='!deopall'):
-				if(sender_nick in self.owners):
-					for op in self.owners:
-						self.deop(op)
-					
-		logfile.close()
+		if(len(data)>0):
+			logfile=open('log','a')
+			sender_nick=sender.split('!')[0]
+			if self.debug==1:
+				print('Got message: %s' % data)
+				print('From: %s' % sender)
+				logfile.write("<%s> %s\n"%(sender_nick, data))
+			else:
+				logfile.write("<%s> %s\n"%(sender_nick, data))
+			iksde=re.search(self.regex, data.lower())
+			if (iksde) or (data.lower()=='xd'):
+				self.kick(sender_nick, 'iksde')
+			if (data[0]=='!'):
+				if (data=='!hello'):
+					self.send_message_to_channel('hej %s' % sender_nick)
+				if (data=='!op'):
+					if(sender_nick in self.owners):
+						self.op(sender_nick)
+				if (data=='!deop'):
+					if(sender_nick in self.owners):
+						self.deop(sender_nick)	
+				if (data.find('!temat')==0):
+					if(sender_nick in self.owners):
+						data=data.replace('!temat ','')
+						self.set_topic(data)
+				if (data.find('!dopisz')==0):
+					if(sender_nick in self.owners):
+						data=data.replace('!dopisz ','')
+						self.get_topic()
+						self.append_topic(data)
+				if (data=='!opall'):
+					if(sender_nick in self.owners):
+						for op in self.owners:
+							self.op(op)
+				if (data=='!deopall'):
+					if(sender_nick in self.owners):
+						for op in self.owners:
+							self.deop(op)					
+			logfile.close()
 	def send_message_to_channel(self, data):
 		self.send('PRIVMSG %s :%s' % (self.channel, data))
 	def set_mode(self, who, mode):
@@ -164,7 +164,6 @@ while 1:
 					user=user[0]
 					if user!=irc.nick:
 						print('%s has joined %s' % (user, irc.channel))
-						irc.send_message_to_channel('Hej %s \o' % user)
 					if('%s!%s' %(user, host) in config.SECONDARY):
 						irc.op(user)
 	except KeyboardInterrupt:
